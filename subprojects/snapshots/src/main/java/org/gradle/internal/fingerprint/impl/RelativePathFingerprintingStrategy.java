@@ -22,6 +22,8 @@ import org.gradle.internal.file.FileType;
 import org.gradle.internal.fingerprint.DirectorySensitivity;
 import org.gradle.internal.fingerprint.FileSystemLocationFingerprint;
 import org.gradle.internal.fingerprint.FingerprintHashingStrategy;
+import org.gradle.internal.fingerprint.SnapshotHashCodeNormalizer;
+import org.gradle.internal.hash.HashCode;
 import org.gradle.internal.snapshot.FileSystemLocationSnapshot;
 import org.gradle.internal.snapshot.FileSystemSnapshot;
 import org.gradle.internal.snapshot.RelativePathTracker;
@@ -29,6 +31,7 @@ import org.gradle.internal.snapshot.SnapshotVisitResult;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Fingerprint file system snapshots normalizing the path to the relative path in a hierarchy.
@@ -41,10 +44,14 @@ public class RelativePathFingerprintingStrategy extends AbstractFingerprintingSt
 
     private final Interner<String> stringInterner;
 
-    public RelativePathFingerprintingStrategy(Interner<String> stringInterner, DirectorySensitivity directorySensitivity) {
-        super(IDENTIFIER);
+    public RelativePathFingerprintingStrategy(Interner<String> stringInterner, DirectorySensitivity directorySensitivity, SnapshotHashCodeNormalizer snapshotNormalizer) {
+        super(IDENTIFIER, snapshotNormalizer);
         this.stringInterner = stringInterner;
         this.directorySensitivity = directorySensitivity;
+    }
+
+    public RelativePathFingerprintingStrategy(Interner<String> stringInterner, DirectorySensitivity directorySensitivity) {
+        this(stringInterner, directorySensitivity, SnapshotHashCodeNormalizer.NONE);
     }
 
     @Override
@@ -68,10 +75,10 @@ public class RelativePathFingerprintingStrategy extends AbstractFingerprintingSt
                     if (snapshot.getType() == FileType.Directory) {
                         fingerprint = IgnoredPathFileSystemLocationFingerprint.DIRECTORY;
                     } else {
-                        fingerprint = new DefaultFileSystemLocationFingerprint(snapshot.getName(), snapshot);
+                        fingerprint = new DefaultFileSystemLocationFingerprint(snapshot.getName(), snapshot.getType(), normalizedHashCode(snapshot));
                     }
                 } else {
-                    fingerprint = new DefaultFileSystemLocationFingerprint(stringInterner.intern(relativePath.toRelativePath()), snapshot);
+                    fingerprint = new DefaultFileSystemLocationFingerprint(stringInterner.intern(relativePath.toRelativePath()), snapshot.getType(), normalizedHashCode(snapshot));
                 }
                 builder.put(absolutePath, fingerprint);
             }

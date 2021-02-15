@@ -202,13 +202,12 @@ public class BuildSessionScopeServices {
     }
 
     ChecksumService createChecksumService(
-        StringInterner stringInterner,
         FileSystem fileSystem,
         CrossBuildFileHashCacheWrapper crossBuildCache,
         BuildSessionScopeFileTimeStampInspector inspector,
         FileHasherStatistics.Collector statisticsCollector
     ) {
-        return new DefaultChecksumService(stringInterner, crossBuildCache.delegate, fileSystem, inspector, statisticsCollector);
+        return new DefaultChecksumService(crossBuildCache.delegate, fileSystem, inspector, statisticsCollector);
     }
 
     UserInputHandler createUserInputHandler(BuildRequestMetaData requestMetaData, OutputEventListenerManager outputEventListenerManager, Clock clock) {
